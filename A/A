@@ -1,0 +1,67 @@
+#!/bin/bash
+
+########################## ****** ############################
+make clean > /dev/null
+make > /dev/null
+########################## ****** ############################
+
+########################## ****** ############################
+### Arquivo de Entrada: ambiente.in (configurações)
+read Port
+port=`echo $Port | cut -d " " -f 2`
+
+# Configurações dos geradores
+read Nro_geradores
+nrogerador=`echo $Nro_geradores | cut -d " " -f 2`
+read ClassGer
+classger=`echo $ClassGer | cut -d " " -f 2`
+read MaqGer
+read MsgGer
+
+# Configurações dos consumidores
+read Nro_consumidores
+nro_consumidores=`echo $Nro_consumidores | cut -d " " -f 2`
+read ClassConsu
+classConsu=`echo $ClassConsu | cut -d " " -f 2`
+read MaqCons
+########################## ****** ############################
+
+
+########################## ****** ############################
+### Lancamento dos consumidores
+for i in `seq 1 $nro_consumidores`
+do
+    maqct=`expr $i + 1`;
+    maqCons=`echo $MaqCons | cut -d " " -f $maqct`
+    echo -n "Lançando Consumidor em "
+    ssh $maqCons hostname
+    dir=`pwd`
+    bas=`basename -a $dir`
+    scp -r $dir $maqCons:/tmp/ > /dev/null
+    ssh $maqCons "cd /tmp/$bas; java $classConsu $port $nrogerador" &
+done
+
+sleep 1
+
+### Lancamento dos geradores
+for i in `seq 1 $nrogerador`
+do
+    echo "####"
+    maqct=`expr $i + 1`;
+    maqger=`echo $MaqGer | cut -d " " -f $maqct`
+    msgger=`echo $MsgGer | cut -d " " -f $maqct`
+    echo -n "Lançando Gerador em  "
+    ssh $maqger hostname
+    dir=`pwd`
+    bas=`basename -a $dir`
+    scp -r $dir $maqger:/tmp/ > /dev/null
+    ssh $maqger "cd /tmp/$bas; java $classger $port $msgger"
+    #ssh rm -rf /tmp/$bas > /dev/null
+done
+
+for i in `seq 1 5`
+do
+    echo "Removendo fontes em ens$i /tmp/$bas"
+    ssh ens$i rm -rf /tmp/$bas
+done
+########################## ****** ############################

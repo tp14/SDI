@@ -1,0 +1,8 @@
+Port: 8888
+Nro_geradores: 3
+ClassGer: Gerador
+MaqGer: ens2 ens4 ens5
+MsgGer: Joao Jose Paulo
+Nro_consumidores: 2
+ClassConsu: Consumidor
+MaqCons: ens2 ens3

@@ -1,0 +1,52 @@
+#!/bin/bash
+
+########################## ****** ############################
+make clean > /dev/null
+make > /dev/null
+########################## ****** ############################
+
+########################## ****** ############################
+### Arquivo de Entrada: ambiente.in (configurações)
+read Nro_clientes
+# echo $Nro_clientes
+nro_proc=`echo $Nro_clientes | cut -d " " -f 2`
+# echo $nro_proc
+
+# Configurações dos clientes
+read Clients
+# echo $Clients
+read Hosts
+# echo $Hosts
+
+read jump
+read jump
+
+for i in `seq 1 $nro_proc`
+do
+    read pCli
+    echo $pCli > meuclient.cli$i
+    #echo $pCli
+done
+
+########################## ****** ############################
+java -cp .:/usr/local/rabbitmq-jar/amqp-client-4.0.2.jar:/usr/local/rabbitmq-jar/slf4j-api-1.7.21.jar:/usr/local/rabbitmq-jar/slf4j-simple-1.7.22.jar Recv $nro_proc & 
+
+read jump
+
+for i in `seq 1 $nro_proc`
+do
+    sleep 1
+    pos=`expr $i + 1`;
+    nom_maquinas=`echo $Hosts | cut -d " " -f $pos`
+    px=`echo $Clients | cut -d " " -f $pos`
+    mydir=`echo "/tmp/mydirtmp${RANDOM:0:5}"`
+    ssh $nom_maquinas mkdir $mydir
+    scp *.class $nom_maquinas:$mydir > /dev/null
+    scp meuclient.cli$i $nom_maquinas:$mydir > /dev/null
+    ssh $nom_maquinas "cd $mydir; java -cp .:/usr/local/rabbitmq-jar/amqp-client-4.0.2.jar:/usr/local/rabbitmq-jar/slf4j-api-1.7.21.jar:/usr/local/rabbitmq-jar/slf4j-simple-1.7.22.jar $px ens5 $i < meuclient.cli$i"
+    rm -f meuclient.cli$i
+    ssh $nom_maquinas rm -rf $mydir
+done
+
+sleep 5
+make clean > /dev/null
